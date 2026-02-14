@@ -1,0 +1,171 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="UTF-8">
+<title>Nation Hunters Survival Simulator</title>
+<style>
+body {
+    background: #050505;
+    color: #00ff88;
+    font-family: 'Courier New', monospace;
+    margin: 0;
+    padding: 0;
+}
+#game-container {
+    width: 80%;
+    margin: 50px auto;
+}
+#status {
+    border: 1px solid #00ff88;
+    padding: 10px;
+    margin-bottom: 20px;
+}
+#event {
+    margin-bottom: 20px;
+}
+button {
+    display: block;
+    background: black;
+    border: 1px solid #00ff88;
+    color: #00ff88;
+    padding: 10px;
+    margin: 5px 0;
+    cursor: pointer;
+    width: 100%;
+}
+button:hover {
+    background: #00ff88;
+    color: black;
+}
+</style>
+</head>
+<body>
+<div id="game-container">
+    <h1>Nation Hunters: Survival Simulator</h1>
+    <div id="status"></div>
+    <div id="event"></div>
+    <div id="choices"></div>
+</div>
+
+<script>
+// INITIAL STATS
+let stats = {
+    day: 1,
+    food: 10,
+    health: 10,
+    morale: 10,
+    mutation: 0,
+    alive: true
+};
+
+// HELPER FUNCTIONS
+function randomInt(min, max) { return Math.floor(Math.random() * (max - min + 1)) + min; }
+
+function updateStatus() {
+    document.getElementById('status').innerHTML = `
+        Day: ${stats.day}<br>
+        Food: ${stats.food}<br>
+        Health: ${stats.health}<br>
+        Morale: ${stats.morale}<br>
+        Mutation: ${stats.mutation}
+    `;
+}
+
+function endGame(message) {
+    stats.alive = false;
+    document.getElementById('event').innerHTML = `<strong>${message}</strong>`;
+    document.getElementById('choices').innerHTML = '';
+}
+
+// RANDOM EVENTS
+function randomEvent() {
+    const events = [
+        () => {
+            stats.food = Math.max(0, stats.food - randomInt(1,3));
+            return `A mutated animal destroyed some of your food! Food lost.`;
+        },
+        () => {
+            stats.morale += 2;
+            return `The team found a safe shelter! Morale increased.`;
+        },
+        () => {
+            stats.mutation += 1;
+            return `Exposure to Syrup! Mutation level increased.`;
+        },
+        () => {
+            stats.health = Math.max(0, stats.health - randomInt(1,2));
+            return `A minor injury occurred during scavenging. Health decreased.`;
+        },
+        () => {
+            return `The day passed uneventfully.`;
+        }
+    ];
+    return events[randomInt(0, events.length-1)]();
+}
+
+// PLAYER ACTIONS
+function actions() {
+    const choicesDiv = document.getElementById('choices');
+    choicesDiv.innerHTML = '';
+
+    const actionsArr = [
+        {text: "Scavenge for food", func: () => {
+            let foodFound = randomInt(1,5);
+            stats.food += foodFound;
+            stats.morale -= 1;
+            stats.health -= randomInt(0,1);
+            stats.mutation += randomInt(0,1);
+            document.getElementById('event').innerHTML = `You scavenged and found ${foodFound} food.\n` + randomEvent();
+            nextDay();
+        }},
+        {text: "Fortify base", func: () => {
+            stats.morale += 2;
+            stats.food -= 1;
+            document.getElementById('event').innerHTML = `You reinforced your base.\n` + randomEvent();
+            nextDay();
+        }},
+        {text: "Research Syrup", func: () => {
+            stats.mutation = Math.max(0, stats.mutation - 1);
+            stats.morale -= 1;
+            document.getElementById('event').innerHTML = `Research reduced mutation slightly.\n` + randomEvent();
+            nextDay();
+        }},
+        {text: "Rest", func: () => {
+            stats.health = Math.min(10, stats.health + 2);
+            stats.morale += 1;
+            stats.food -= 1;
+            document.getElementById('event').innerHTML = `The team rested.\n` + randomEvent();
+            nextDay();
+        }}
+    ];
+
+    actionsArr.forEach(a => {
+        const btn = document.createElement('button');
+        btn.textContent = a.text;
+        btn.onclick = a.func;
+        choicesDiv.appendChild(btn);
+    });
+}
+
+// NEXT DAY CHECKS
+function nextDay() {
+    stats.day += 1;
+    if(stats.food <= 0 || stats.health <= 0 || stats.morale <= 0) {
+        endGame("Your team could not survive. Game Over.");
+    } else if(stats.mutation >= 5) {
+        endGame("Mutation overtook the team! They are no longer human. Game Over.");
+    } else if(stats.day > 10) {
+        endGame("Congratulations! You survived 10 days and established a safe base.");
+    } else {
+        updateStatus();
+        actions();
+    }
+}
+
+// INITIALIZE GAME
+updateStatus();
+actions();
+
+</script>
+</body>
+</html>
